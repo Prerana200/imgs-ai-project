@@ -1,0 +1,9 @@
+# Run this in C:\AI Project
+@"
+venv/
+dataset/
+dataset.zip/
+runs/
+*.pt
+__pycache__/
+"@ | Out-File -FilePath .gitignore -Encoding utf8
