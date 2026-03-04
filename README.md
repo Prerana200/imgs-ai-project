@@ -1,4 +1,7 @@
-# Dakshiya AI – Intelligent Industrial Monitoring System
+Dakshiya AI
+Intelligent Industrial Monitoring System
+---------------------------------------
+Real-time AI monitoring for industrial environments
 
 Dakshiya AI is an AI-powered industrial monitoring platform that uses
 computer vision and machine learning to analyze real-time video data
