@@ -4,9 +4,9 @@ class AIModule:
 
     def __init__(self):
 
-        # Load both models
-        self.model1 = YOLO("best.pt")
-        self.model2 = YOLO("best2.pt")
+        # Do NOT load models immediately
+        self.model1 = None
+        self.model2 = None
 
         # Calibration
         self.MM_PER_PIXEL = 0.5
@@ -17,12 +17,25 @@ class AIModule:
         self.OVERSIZE_LIMIT_MM = 50
 
 
+    def load_models(self):
+
+        # Load models only when needed
+        if self.model1 is None:
+            self.model1 = YOLO("best.pt")
+
+        if self.model2 is None:
+            self.model2 = YOLO("best2.pt")
+
+
     def predict(self, image):
+
+        # Ensure models are loaded
+        self.load_models()
 
         results1 = self.model1(image)
         results2 = self.model2(image)
 
-        results = results1 + results2
+        results = list(results1) + list(results2)
 
         detections = []
 
@@ -44,4 +57,3 @@ class AIModule:
                     })
 
         return detections
-       
