@@ -89,23 +89,26 @@ async def predict(file: UploadFile = File(...)):
     # 3️⃣ Save Detections to Database
     # ----------------------------
     for obj in detections:
-        save_detection(obj["class"], obj["confidence"])
+        label = obj.get("class", "unknown")
+        conf = obj.get("confidence", 0)
+        save_detection(label, conf)
+
 
     # ----------------------------
     # 4️⃣ Granulometry Calculation
     # ----------------------------
-    fine_count = sum(1 for d in detections if d["size_category"] == "Fine")
-    medium_count = sum(1 for d in detections if d["size_category"] == "Medium")
-    oversize_count = sum(1 for d in detections if d["size_category"] == "Oversize")
+    fine_count = sum(1 for d in detections if d.get("size_category") == "Fine")
+    medium_count = sum(1 for d in detections if d.get("size_category") == "Medium")
+    oversize_count = sum(1 for d in detections if d.get("size_category") == "Oversize")
 
     total = len(detections)
 
     fine_pct = (fine_count / total) * 100 if total else 0
     medium_pct = (medium_count / total) * 100 if total else 0
     oversize_pct = (oversize_count / total) * 100 if total else 0
-
+     
     # ----------------------------
-    # 5️⃣ PLC Emergency Logic
+    # PLC Logic
     # ----------------------------
     if oversize_pct > 40:
         emergency_triggered = True
@@ -132,32 +135,45 @@ async def predict(file: UploadFile = File(...)):
     # 7️⃣ Foreign Object Detection
     # ----------------------------
     alerts = []
+
     for obj in detections:
-        if obj["class"].lower() != "coal":
+        if obj.get("class", "").lower() != "coal":
             alerts.append("Foreign Object Detected")
 
     if emergency_stop:
         alerts.append("EMERGENCY STOP REQUIRED")
 
+
     # ----------------------------
     # 8️⃣ Draw Bounding Boxes
     # ----------------------------
     for obj in detections:
-        x1, y1, x2, y2 = obj["bbox"][0]
-        label = obj["class"]
-        conf = obj["confidence"]
+        bbox = obj.get("bbox", [0, 0, 0, 0])
 
-        if obj["size_category"] == "Oversize":
+        # Ensure bbox format is correct
+        if isinstance(bbox, list) and len(bbox) == 4:
+            x1, y1, x2, y2 = bbox
+        elif isinstance(bbox, list) and len(bbox) > 0:
+            x1, y1, x2, y2 = bbox[0]
+        else:
+            continue
+
+        label = obj.get("class", "unknown")
+        conf = obj.get("confidence", 0)
+        size = obj.get("size_category", "Medium")
+
+        if size == "Oversize":
             color = (0, 0, 255)
-        elif obj["size_category"] == "Medium":
+        elif size == "Medium":
             color = (0, 165, 255)
         else:
             color = (0, 255, 0)
 
         cv2.rectangle(img, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)
+
         cv2.putText(
             img,
-            f"{label} | {obj['size_category']} | {conf}",
+            f"{label} | {size} | {conf}",
             (int(x1), int(y1) - 10),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
@@ -257,7 +273,7 @@ def export_csv():
         media_type="text/csv",
         filename="detections_report.csv"
     )
-
+ 
 # Try to open webcam (may fail in Docker)
 try:
     camera = cv2.VideoCapture(0)
@@ -347,3 +363,4 @@ def analytics():
         "average_confidence": round(avg_conf, 2),
         "oversize_count": oversize_count
     }
+    
