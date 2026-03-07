@@ -3,36 +3,31 @@ from ultralytics import YOLO
 class AIModule:
 
     def __init__(self):
-
-        # Do NOT load models immediately
         self.model1 = None
         self.model2 = None
 
-        # Calibration
         self.MM_PER_PIXEL = 0.5
-
-        # Industrial Size Thresholds
         self.FINE_LIMIT_MM = 20
         self.MEDIUM_LIMIT_MM = 50
         self.OVERSIZE_LIMIT_MM = 50
 
 
-    def load_models(self):
-
-        # Load models only when needed
+    def load_model1(self):
         if self.model1 is None:
             self.model1 = YOLO("best.pt")
 
+
+    def load_model2(self):
         if self.model2 is None:
             self.model2 = YOLO("best2.pt")
 
 
     def predict(self, image):
 
-        # Ensure models are loaded
-        self.load_models()
-
+        self.load_model1()
         results1 = self.model1(image)
+
+        self.load_model2()
         results2 = self.model2(image)
 
         results = list(results1) + list(results2)
@@ -47,8 +42,6 @@ class AIModule:
                     conf = float(box.conf.item())
 
                     label = result.names[cls_id]
-
-                    x1, y1, x2, y2 = box.xyxy[0]
 
                     detections.append({
                         "class": label,
