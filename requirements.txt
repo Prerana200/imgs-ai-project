@@ -7,3 +7,4 @@ pillow
 streamlit
 requests
 python-multipart
+plotly
